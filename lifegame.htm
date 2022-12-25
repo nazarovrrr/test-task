@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport'/>
+    <meta name="viewport" content="width=device-width"/>
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js" type="text/javascript"></script>
+<style>
+body {
+    font-family: 'Lucida Grande', Helvetica, Arial, sans-serif;
+    font-size: 12pt;
+    text-align: left;
+    background-color: #eee;
+}
+#screen {
+    margin: 0 auto;
+}
+h1 {
+    font-size: 14pt;
+    margin: 1em;
+}
+form {
+    padding: 1em;
+}
+</style>
+<script type="text/javascript">
+
+
+
+var GRID_PARAMS = {
+	WIDTH: 100,
+	HEIGHT: 100,
+	CELL_SIZE: 10,
+	STATE_ALIVE: 1,
+	STATE_DEAD: 0,
+	COLOR_ALIVE: 'blue',
+	COLOR_DEAD: 'white'
+};
+
+function cell_obj(x, y) {
+    this.x = x;
+    this.y = y;
+    this.state = GRID_PARAMS.STATE_DEAD;
+    this.nextState = GRID_PARAMS.STATE_DEAD;
+    this.colorIndex = 0;
+}
+
+cell_obj.prototype = {
+	cell_params: {
+		CELL_SIZE: 10,
+		STATE_ALIVE: 1,
+		STATE_DEAD: 0,
+		COLOR_ALIVE: 'blue',
+		COLOR_DEAD: 'white'
+	},
+
+	draw: function (ctx) {
+		var x = this.x * cell_obj.prototype.cell_params.CELL_SIZE,
+			y = this.y * cell_obj.prototype.cell_params.CELL_SIZE;
+			
+		ctx.fillStyle = this.isAlive() ? GRID_PARAMS.COLOR_ALIVE : GRID_PARAMS.COLOR_DEAD;
+		ctx.fillRect(x, y, cell_obj.prototype.cell_params.CELL_SIZE, cell_obj.prototype.cell_params.CELL_SIZE);
+	},	
+	
+	setState: function (state) {
+		this.state = this.nextState = state;
+	},
+
+	setNextState: function (state) {
+		this.nextState = state;
+	},
+
+	switchState: function () {
+		this.state = this.nextState;
+	},
+
+	isAlive: function () {
+		return this.state == GRID_PARAMS.STATE_ALIVE;
+	},
+
+	countLiveNeighbors: function (grid) {
+		var liveCount = 0;
+
+		for (var i = -1; i < 2; ++i) {
+			for (var j = -1; j < 2; ++j) {
+				var dx = (this.x + i) % grid.width,
+					dy = (this.y + j) % grid.height,
+					cell = grid.getCell(dx, dy);
+					
+				if (cell && cell != this && cell.isAlive()) {
+					++liveCount;
+				}
+			}
+		}
+
+		return liveCount;
+	},
+	
+	checkCell: function (grid) {	
+		var  live = this.countLiveNeighbors(grid);
+
+		if (this.isAlive()) { // STATE_ALIVE
+			if (live > 3) this.setNextState(GRID_PARAMS.STATE_DEAD); // «Перегрузка» STATE_ALIVE>3 -> STATE_DEAD
+			else if (live < 2) this.setNextState(GRID_PARAMS.STATE_DEAD); // «Изоляция» STATE_ALIVE<2 -> STATE_DEAD
+			else if (live !== 2 || live !== 3) this.setNextState(GRID_PARAMS.STATE_DEAD); // «Вымирание» STATE_ALIVE !== 2||3 -> STATE_DEAD
+		} else { // STATE_DEAD
+			if (live === 3) this.setNextState(GRID_PARAMS.STATE_ALIVE); // «Активация» STATE_ALIVE === 3 -> STATE_ALIVE
+		}
+	}
+};
+
+var grid_obj = {    
+	init_func: function () {
+		var width = GRID_PARAMS.WIDTH,
+			height= GRID_PARAMS.HEIGHT,
+			cellSize = cell_obj.prototype.cell_params.CELL_SIZE;
+		
+		var cellSize = cellSize || cell_obj.prototype.cell_params.CELL_SIZE;
+		this.grid = Array();
+		this.width = width;
+		this.height = height;
+		this.cellSize = cellSize;
+		this.pWidth = width * cellSize;
+		this.pHeight = height * cellSize;
+		
+		var grid = this.grid;
+		for (var j = 0; j < height; ++j) {
+			for (var i = 0; i < width; ++i) {
+				grid[i + j * height] = new cell_obj(i, j);
+			}
+		}
+	
+	},
+	
+	getCell: function (x, y) {
+		return this.grid[x + y * this.height];
+	},
+
+getCellAt: function (x, y) {
+    var xcell = Math.floor(x / this.cellSize);
+    var ycell = Math.floor(y / this.cellSize);
+    return this.getCell(xcell, ycell);
+},
+
+draw: function (ctx) {
+    ctx.clearRect(0, 0, this.pWidth, this.pHeight);
+    for (var j = 0; j < this.height; ++j) {
+        for (var i = 0; i < this.width; ++i) {
+            var cell = this.getCell(i, j);
+            cell.switchState();
+            cell.draw(ctx);
+        }
+    }
+},
+
+cycle: function () {
+    for (var x = 0; x < this.width; ++x) {
+        for (var y = 0; y < this.height; ++y) {
+			this.getCell(x, y).checkCell(this);
+        }
+    }
+},
+
+randomize: function (chanceToLive) {
+    var chance = (100 - (chanceToLive || 5));
+    for (var y = 0; y < this.height; ++y) {
+        for (var x = 0; x < this.width; ++x) {
+            var cell = this.getCell(x, y),
+                rand = 1 + Math.floor(Math.random() * (100 + 1)),
+                alive = rand > chance;
+
+            cell.setState(alive ? GRID_PARAMS.STATE_ALIVE : GRID_PARAMS.STATE_DEAD);
+        }
+    }    
+}
+	}
+var life_obj = (function () {
+	var _this_obj,
+		_grid_obj,		
+		_context_obj = {
+			ctx: null,
+			canvas: null,
+			getCanvas: function () {
+				if (this.canvas === null) {
+					this.canvas = document.getElementById('screen');
+					this.canvas.width  = window.innerWidth;
+					this.canvas.height = window.innerHeight;
+				}
+				return this.canvas;
+			},
+			getContext: function () {
+				if (this.ctx === null) {
+					var canvas = this.getCanvas();
+					this.ctx = canvas.getContext('2d');         
+				}        
+				return this.ctx;    
+			}
+		};
+
+	var _init_obj = function (this_obj) {
+		_this_obj = this_obj;
+
+		_grid_obj = grid_obj;
+		
+		
+		_grid_obj.init_func();
+		_grid_obj.randomize();
+		_context_obj = _context_obj.getContext();
+
+		function step() {
+			_grid_obj.cycle();
+			_grid_obj.draw(_context_obj);
+		}
+		var interval = setInterval(step, 1000);
+
+		var randButton = document.getElementById('random');
+		randButton.onclick = function () {
+			var textField = document.getElementById('chanceOfLife');
+			var val = parseInt(textField.value);
+			_grid_obj.randomize(val);
+			_grid_obj.draw(_context_obj);
+		};
+
+		var stepButton = document.getElementById('step');
+		stepButton.onclick = function () {
+			var stepTime = document.getElementById('stepTime');
+			var val = parseInt(stepTime.value);
+
+			clearInterval(interval);
+			interval = setInterval(step, val);
+		};
+
+		var stopButton = document.getElementById('stop');
+		stopButton.onclick = function () {
+			clearInterval(interval);
+		};
+
+		return _this_obj;
+	}
+
+	return {
+		init: function () {
+			return _init_obj(this);
+		}
+	};
+}());
+
+</script>
+
+</head>
+<body>
+<h1>ИГРА ЖИЗНЬ ЛАБИРИНТ</h1>
+<canvas id="screen" width="300px" height="300px">
+</canvas>
+<form>
+    <div>
+        <label for="chanceOfLife">% изначально живых</label>
+        <input id="chanceOfLife" type="text" value="50"/>
+		<label for="width">Ширина</label>
+        <input id="width" type="text" value="100"/>
+		<label for="height">Высота</label>
+        <input id="heght" type="text" value="100"/>
+        <input id="random" type="button" value="Установить" />
+    </div>
+    <div>
+        <label for="stepTime">Скорость (ms)</label>
+        <input id="stepTime" type="text" value="1000" />
+        <input id="step" type="button" value="Обновить" />
+        <input id="stop" type="button" value="Стоп" />
+    </div>
+</form>
+</br>
+<div>
+<P STYLE="margin-bottom: 0cm"><FONT SIZE=2>var  live =
+this.countLiveNeighbors(grid);<BR><BR><SPAN STYLE="background: #00ff66">if
+(this.isAlive()) { // STATE_ALIVE</SPAN><BR>	// &laquo;Перегрузка&raquo;
+STATE_ALIVE&gt;3 -&gt; STATE_DEAD</FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT SIZE=2>	if (<SPAN STYLE="background: #ffff66">live
+&gt; 3</SPAN>) this.setNextState(GRID_PARAMS.STATE_DEAD); </FONT>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT SIZE=2>	// &laquo;Изоляция&raquo;
+STATE_ALIVE&lt;2 -&gt; STATE_DEAD<BR>	else if (<SPAN STYLE="background: #ffff66">live
+&lt; 2</SPAN>) this.setNextState(GRID_PARAMS.STATE_DEAD); </FONT>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT SIZE=2>	// &laquo;Вымирание&raquo;
+STATE_ALIVE !== 2||3 -&gt; STATE_DEAD<BR>	else if (<SPAN STYLE="background: #ffff66">live
+!== 2 || live !== 3</SPAN>)
+this.setNextState(GRID_PARAMS.STATE_DEAD); <BR><SPAN STYLE="background: #ff3333">}
+else { // STATE_DEAD</SPAN></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT SIZE=2>	// &laquo;Активация&raquo;
+STATE_ALIVE === 3 -&gt; STATE_ALIVE	</FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT SIZE=2>	if (<SPAN STYLE="background: #ffff66">live
+=== 3</SPAN>) this.setNextState(GRID_PARAMS.STATE_ALIVE);<BR>}</FONT></P>
+</div>
+<script>life_obj.init();
+</script>
+</body>
+</html>
