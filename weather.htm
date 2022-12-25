@@ -78,11 +78,8 @@ form {
 			$("#jpy").text("1 JPY = " + data.Valute.JPY.Value.toFixed(2) + " RUB");
 			$("#usd").text("1 USD = " + data.Valute.USD.Value.toFixed(2) + " RUB");
 		});
-		 <!-- $.get( "http://api.weatherapi.com/v1/current.json?key=551bb48c135b4f15923224221222512&q=Moscow&aqi=no", function( weather ) { -->
-                <!-- console.log(weather); -->
-            <!-- }, 'jsonp'); -->
 		$.getJSON("http://api.weatherapi.com/v1/current.json?key=551bb48c135b4f15923224221222512&lang=ru&q=Moscow&aqi=no", function(data) {
-			$("#weather").next().text("Температура " + data.current.temp_c).next().text("Ощущается как " + data.current.feelslike_c).next().text("" + data.current.condition.text);
+			$("#weather").text("Москва " + data.location.localtime).next().text("Температура " + data.current.temp_c).next().text("Ощущается как " + data.current.feelslike_c).next().text("" + data.current.condition.text);
 			$(".weather_block img").attr("src", data.current.condition.icon);
 		});
 	}
