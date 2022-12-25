@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport'/>
+    <meta name="viewport" content="width=device-width"/>
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js" type="text/javascript"></script>
+<style>
+body {
+    font-family: 'Lucida Grande', Helvetica, Arial, sans-serif;
+    font-size: 12pt;
+    text-align: left;
+    background: #C4C4C4;padding: 30px;
+}
+#screen {
+    margin: 0 auto;
+}
+h1 {
+    font-size: 14pt;
+    margin: 1em;
+}
+form {
+    padding: 1em;
+}
+.row_block {
+	float:left;
+	clear:both;width: 100%;
+}
+.weather_block {
+	display:block;overflow:hidden;
+	width: 220px;
+	height: 122px;
+	float:left;
+	margin: 10px;
+	background: #DAC1AE;
+	box-shadow: 0px 0px 10px 1px rgba(173, 169, 165, 0.5);
+	border-radius: 23px;
+	padding: 15px;
+}
+.currency_block {
+	display:block;overflow:hidden;
+	width: 148px;
+	height: 85px;
+	margin: 10px;
+	float:left;
+	background: #DAC1AE;
+	box-shadow: 0px 0px 10px 1px rgba(173, 169, 165, 0.5);
+	border-radius: 10px;
+	padding: 15px;
+}
+.refresh_block {
+	display:block;overflow:hidden;
+	width: 63px;
+	height: 63px;
+	float:right;
+	cursor:pointer;
+}
+.refresh_block img {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+.weather_block span {
+	display:block;
+}
+.currency_block span {
+	display:block;
+}
+</style>
+<script type="text/javascript">
+	var refresh = function () {		
+		$.getJSON("https://www.cbr-xml-daily.ru/daily_json.js", function(data) {
+			$("#eur").text("1 EUR = " + data.Valute.EUR.Value.toFixed(2) + " RUB");
+			$("#cad").text("1 CAD = " + data.Valute.CAD.Value.toFixed(2) + " RUB");
+			$("#sek").text("1 SEK = " + data.Valute.SEK.Value.toFixed(2) + " RUB");
+			$("#jpy").text("1 JPY = " + data.Valute.JPY.Value.toFixed(2) + " RUB");
+			$("#usd").text("1 USD = " + data.Valute.USD.Value.toFixed(2) + " RUB");
+		});
+		 <!-- $.get( "http://api.weatherapi.com/v1/current.json?key=551bb48c135b4f15923224221222512&q=Moscow&aqi=no", function( weather ) { -->
+                <!-- console.log(weather); -->
+            <!-- }, 'jsonp'); -->
+		$.getJSON("http://api.weatherapi.com/v1/current.json?key=551bb48c135b4f15923224221222512&lang=ru&q=Moscow&aqi=no", function(data) {
+			$("#weather").next().text("Температура " + data.current.temp_c).next().text("Ощущается как " + data.current.feelslike_c).next().text("" + data.current.condition.text);
+			$(".weather_block img").attr("src", data.current.condition.icon);
+		});
+	}
+	
+	$( document ).ready(function() {
+    refresh();
+});
+</script>
+
+</head>
+<body>
+<h1>Погода, валюты ЛАБИРИНТ</h1>
+<div style='float: left;' class="row_kkblock">
+	<div class="row_block">
+		<div class="weather_block">
+			<span style="font-size:14px;" id="weather">Москва</span>
+			<span style="font-size:18px;">Температура</span>
+			<span style="font-size:18px;">Ощущается как</span>
+			<span style="font-size:12px;">Пасмурно, небольшой дождь</span>
+			<img style="display:block;" src="";/>;
+		</div>
+		<div class="refresh_block" onclick="refresh();">
+			<img src="refresh.png";/>
+		</div>
+	</div>
+	<div class="row_block">
+		<div class="currency_block">
+			<span style="font-size:16px;" id="usd">rehc</span>
+			<span style="font-size:14px;">Доллар США</span>
+		</div>
+		<div class="currency_block">
+			<span style="font-size:16px;" id="eur">rehc</span>
+			<span style="font-size:14px;">Евро</span>
+		</div>
+		<div class="currency_block">
+			<span style="font-size:16px;" id="sek">rehc</span>
+			<span style="font-size:14px;">Шведская крона</span>
+		</div>
+		<div class="currency_block">
+			<span style="font-size:16px;" id="jpy">rehc</span>
+			<span style="font-size:14px;">Японская йена</span>
+		</div>
+		<div class="currency_block">
+			<span style="font-size:16px;" id="cad">rehc</span>
+			<span style="font-size:14px;">Канадский доллар</span>
+		</div>
+	</div>
+</div>
+</body>
+</html>
